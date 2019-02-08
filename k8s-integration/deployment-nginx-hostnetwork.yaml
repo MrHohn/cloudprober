@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: my-nginx-hostnetwork
+spec:
+  selector:
+    matchLabels:
+      run: my-nginx-hostnetwork
+  template:
+    metadata:
+      labels:
+        run: my-nginx-hostnetwork
+    spec:
+      containers:
+      - name: my-nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 8081
+      hostNetwork: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-nginx-hostnetwork
+  labels:
+    run: my-nginx-hostnetwork
+spec:
+  selector:
+    run: my-nginx-hostnetwork
+  type: NodePort
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8081

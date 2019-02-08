@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: net-probe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: net-probe
+  template:
+    metadata:
+      labels:
+        app: net-probe
+    spec:
+      containers:
+      - name: cloudprober
+        image: cloudprober/cloudprober
+        args: [
+          "--config_file","/cfg/cloudprober.cfg",
+          "--logtostderr"
+        ]
+        ports:
+        - name: http
+          containerPort: 9313
+        volumeMounts:
+        - name: cloudprober-config
+          mountPath: /cfg
+        # env:
+        # - name: CLOUDPROBER_PORT
+        #   value: "9313"
+      - name: prometheus
+        image: prom/prometheus
+        args: [
+          "--config.file","/cfg/prometheus.yaml",
+        ]
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /cfg
+      volumes:
+      - name: cloudprober-config
+        configMap:
+          name: cloudprober-config
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: net-probe
+  labels:
+    app: net-probe
+spec:
+  ports:
+  - port: 9313
+    protocol: TCP
+    targetPort: 9313
+  selector:
+    app: net-probe
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: net-probe-prometheus
+  labels:
+    app: net-probe
+spec:
+  ports:
+  - port: 9090
+    protocol: TCP
+    targetPort: 9090
+  selector:
+    app: net-probe
+  type: NodePort
