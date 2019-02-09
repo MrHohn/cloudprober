@@ -15,7 +15,7 @@ spec:
       - name: my-nginx
         image: nginx:latest
         ports:
-        - containerPort: 8081
+        - containerPort: 80
       hostNetwork: true
 ---
 apiVersion: v1
@@ -31,4 +31,3 @@ spec:
   ports:
   - port: 80
     protocol: TCP
-    targetPort: 8081

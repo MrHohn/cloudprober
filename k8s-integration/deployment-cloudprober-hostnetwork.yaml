@@ -28,21 +28,10 @@ spec:
         # env:
         # - name: CLOUDPROBER_PORT
         #   value: "9313"
-      - name: prometheus
-        image: prom/prometheus
-        args: [
-          "--config.file","/cfg/prometheus.yaml",
-        ]
-        volumeMounts:
-        - name: prometheus-config
-          mountPath: /cfg
       volumes:
       - name: cloudprober-config
         configMap:
-          name: cloudprober-config
-      - name: prometheus-config
-        configMap:
-          name: prometheus-config
+          name: cloudprober-config-hostnetwork
       hostNetwork: true
 ---
 apiVersion: v1
@@ -61,16 +50,58 @@ spec:
   type: NodePort
 ---
 apiVersion: v1
-kind: Service
+kind: ConfigMap
 metadata:
-  name: net-probe-hostnetwork-prometheus
-  labels:
-    app: net-probe-hostnetwork
-spec:
-  ports:
-  - port: 9090
-    protocol: TCP
-    targetPort: 9090
-  selector:
-    app: net-probe-hostnetwork
-  type: NodePort
+  name: cloudprober-config-hostnetwork
+  namespace: default
+data:
+  cloudprober.cfg: |
+    probe {
+      name: "nodes"
+      type: HTTP
+      targets {
+        host_names: "10.128.0.3,10.128.0.4,10.128.0.5"
+      }
+      interval_msec: 15000
+      timeout_msec: 1000
+    }
+    probe {
+      name: "pods"
+      type: HTTP
+      targets {
+        host_names: "10.64.1.9,10.64.2.13,10.64.3.16"
+      }
+      interval_msec: 15000
+      timeout_msec: 1000
+    }
+    probe {
+      name: "services"
+      type: HTTP
+      targets {
+        host_names: "10.0.6.201,10.0.143.250"
+      }
+      interval_msec: 15000
+      timeout_msec: 1000
+    }
+    probe {
+      name: "external"
+      type: HTTP
+      targets {
+        host_names: "www.google.com"
+      }
+      interval_msec: 15000
+      timeout_msec: 1000
+    }
+    surfacer {
+      type: PROMETHEUS 
+    }
+    surfacer {
+      type: STACKDRIVER
+    }
+    surfacer {
+      type: FILE 
+      # file_surfacer {
+      #   file_path: "/home/cloudprober.log"
+      # }
+    }
+    sysvars_interval_msec: 3600000
